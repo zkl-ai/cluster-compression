@@ -109,8 +109,8 @@ def get_args_parser(add_help=True):
 
 
 def runner(args, req, lock):
+    device = 'cuda'
     model_type, idx, prune_ratios, callback_address = req
-    device = torch.device('cuda:0')
     print("Creating model")
     model = registry.get_model(num_classes=1000, name=model_type, pretrained=args.pretrained, target_dataset='imagenet') #torchvision.models.__dict__[args.model](pretrained=args.pretrained) #torchvision.models.get_model(args.model, weights=args.weights, num_classes=num_classes)
     model.eval()
