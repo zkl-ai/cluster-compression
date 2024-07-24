@@ -127,24 +127,24 @@ def runner(args, req, lock):
     ignored_layers = []
     pruning_ratio_dict = {}
     pruning_ratio_idx = 0
-    if isinstance(model, torchvision.models.resnet.ResNet):
-        for m in model.modules():
-            if isinstance(m, torchvision.models.resnet.Bottleneck): 
-                pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
-                pruning_ratio_idx += 1
-            if isinstance(m, torch.nn.Linear) and m.out_features == 1000:
+    # if isinstance(model, torchvision.models.resnet.ResNet):
+    #     for m in model.modules():
+    #         if isinstance(m, torchvision.models.resnet.Bottleneck): 
+    #             pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
+    #             pruning_ratio_idx += 1
+    #         if isinstance(m, torch.nn.Linear) and m.out_features == 1000:
+    #             ignored_layers.append(m) # DO NOT prune the final classifier!
+    # elif isinstance(model, torchvision.models.vgg.VGG):
+    for m in model.modules():
+        if isinstance(m, torch.nn.modules.conv.Conv2d):
+            pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
+            pruning_ratio_idx += 1
+        if isinstance(m, torch.nn.Linear):
+            if m.out_features == 1000:
                 ignored_layers.append(m) # DO NOT prune the final classifier!
-    elif isinstance(model, torchvision.models.vgg.VGG):
-        for m in model.modules():
-            if isinstance(m, torch.nn.modules.conv.Conv2d):
+            else:
                 pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
                 pruning_ratio_idx += 1
-            if isinstance(m, torch.nn.Linear):
-                if m.out_features == 1000:
-                    ignored_layers.append(m) # DO NOT prune the final classifier!
-                else:
-                    pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
-                    pruning_ratio_idx += 1
     # print(pruning_ratio_dict)
     imp = tp.importance.MagnitudeImportance(p=2)
     pruner = tp.pruner.MetaPruner(
