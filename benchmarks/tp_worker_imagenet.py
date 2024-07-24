@@ -134,6 +134,7 @@ def runner(args, req, lock):
                 pruning_ratio_idx += 1
             if isinstance(m, torch.nn.Linear) and m.out_features == 1000:
                 ignored_layers.append(m) # DO NOT prune the final classifier!
+
     elif isinstance(model, torchvision.models.vgg.VGG):
         for m in model.modules():
             if isinstance(m, torch.nn.Conv2d):
@@ -145,19 +146,19 @@ def runner(args, req, lock):
                 else:
                     pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
                     pruning_ratio_idx += 1
-    # print(pruning_ratio_dict)
+    
     imp = tp.importance.MagnitudeImportance(p=2)
-    pruner = tp.pruner.MetaPruner(
-        model,
-        example_inputs,
-        importance=imp,
-        pruning_ratio=1.0,
-        pruning_ratio_dict = pruning_ratio_dict,
-        ignored_layers=ignored_layers,
-    )
+    # print(pruning_ratio_dict)
+    pruner = tp.pruner.MagnitudePruner(
+            model,
+            example_inputs,
+            importance=imp,
+            pruning_ratio=1.0,
+            pruning_ratio_dict = pruning_ratio_dict,
+            ignored_layers=ignored_layers,
+        )
     model = model.to('cpu')
     print("="*16)
-    
     print("After pruning:")
     pruner.step()
     print(model)
