@@ -5,6 +5,7 @@ from torchvision.models import (
     googlenet,
     inception_v3,
     squeezenet1_1,
+    vgg16,
     vgg16_bn,
     vgg19_bn,
     mnasnet1_0,
