@@ -149,7 +149,7 @@ def runner(args, req, lock):
     
     imp = tp.importance.MagnitudeImportance(p=2)
     # print(pruning_ratio_dict)
-    pruner = tp.pruner.MetaPruner(
+    pruner = tp.pruner.MagnitudePruner(
             model,
             example_inputs,
             importance=imp,
