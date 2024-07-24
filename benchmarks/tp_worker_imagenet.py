@@ -136,7 +136,7 @@ def runner(args, req, lock):
                 ignored_layers.append(m) # DO NOT prune the final classifier!
     elif isinstance(model, torchvision.models.vgg.VGG):
         for m in model.modules():
-            if isinstance(m, torch.nn.modules.conv.Conv2d):
+            if isinstance(m, torch.nn.Conv2d):
                 pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
                 pruning_ratio_idx += 1
             if isinstance(m, torch.nn.Linear):
