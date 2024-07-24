@@ -108,7 +108,7 @@ def get_args_parser(add_help=True):
     return parser
 
 
-def runner(args, req):
+def runner(args, req, lock):
     device = 'cuda'
     model_type, idx, prune_ratios, callback_address = req
     print("Creating model")
@@ -127,24 +127,24 @@ def runner(args, req):
     ignored_layers = []
     pruning_ratio_dict = {}
     pruning_ratio_idx = 0
-    # if isinstance(model, torchvision.models.resnet.ResNet):
-    #     for m in model.modules():
-    #         if isinstance(m, torchvision.models.resnet.Bottleneck): 
-    #             pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
-    #             pruning_ratio_idx += 1
-    #         if isinstance(m, torch.nn.Linear) and m.out_features == 1000:
-    #             ignored_layers.append(m) # DO NOT prune the final classifier!
-    # elif isinstance(model, torchvision.models.vgg.VGG):
-    for m in model.modules():
-        if isinstance(m, torch.nn.modules.conv.Conv2d):
-            pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
-            pruning_ratio_idx += 1
-        if isinstance(m, torch.nn.Linear):
-            if m.out_features == 1000:
-                ignored_layers.append(m) # DO NOT prune the final classifier!
-            else:
+    if isinstance(model, torchvision.models.resnet.ResNet):
+        for m in model.modules():
+            if isinstance(m, torchvision.models.resnet.Bottleneck): 
                 pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
                 pruning_ratio_idx += 1
+            if isinstance(m, torch.nn.Linear) and m.out_features == 1000:
+                ignored_layers.append(m) # DO NOT prune the final classifier!
+    elif isinstance(model, torchvision.models.vgg.VGG):
+        for m in model.modules():
+            if isinstance(m, torch.nn.modules.conv.Conv2d):
+                pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
+                pruning_ratio_idx += 1
+            if isinstance(m, torch.nn.Linear):
+                if m.out_features == 1000:
+                    ignored_layers.append(m) # DO NOT prune the final classifier!
+                else:
+                    pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
+                    pruning_ratio_idx += 1
     # print(pruning_ratio_dict)
     imp = tp.importance.MagnitudeImportance(p=2)
     pruner = tp.pruner.MetaPruner(
@@ -202,12 +202,18 @@ def runner(args, req):
     else:
         print("wrong request with response".format(status_code))
 
-    return
+    lock.release()
+
 
 def consumer(name, args, individual_queue):
-    while True:
-        req = individual_queue.get()
-        runner(args,req)
+    with Manager() as m:
+        lock = m.Lock()
+        while True:
+            lock.acquire()
+            req = individual_queue.get()
+            ctx = get_context('spawn')
+            # t = ctx.Process(target=runner, args=(req, test_data_mem_lat_iter, network_utils, lock))
+            runner(args,req,lock)
 
 
 def producer(name, individual_queue, server=('localhost', 8080)):
