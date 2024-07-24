@@ -108,7 +108,7 @@ def get_args_parser(add_help=True):
     return parser
 
 
-def runner(args, req, lock):
+def runner(args, req):
     device = 'cuda'
     model_type, idx, prune_ratios, callback_address = req
     print("Creating model")
@@ -202,18 +202,12 @@ def runner(args, req, lock):
     else:
         print("wrong request with response".format(status_code))
 
-    lock.release()
-
+    return
 
 def consumer(name, args, individual_queue):
-    with Manager() as m:
-        lock = m.Lock()
-        while True:
-            lock.acquire()
-            req = individual_queue.get()
-            ctx = get_context('spawn')
-            # t = ctx.Process(target=runner, args=(req, test_data_mem_lat_iter, network_utils, lock))
-            runner(args,req,lock)
+    while True:
+        req = individual_queue.get()
+        runner(args,req)
 
 
 def producer(name, individual_queue, server=('localhost', 8080)):
