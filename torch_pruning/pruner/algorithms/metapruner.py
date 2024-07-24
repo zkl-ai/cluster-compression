@@ -229,7 +229,7 @@ class MetaPruner:
         else:
             for group in pruning_method():
                 group.prune()
-                # print("gg")
+                print("gg")
             # exit(0)
 
     def manual_prune(self, layer, pruning_fn, pruning_ratios_or_idxs):
