@@ -85,6 +85,7 @@ IMAGENET_MODEL_DICT={
     "squeezenet1_1": models.imagenet.squeezenet1_1,
     "vgg19_bn": models.imagenet.vgg19_bn,
     "vgg16_bn": models.imagenet.vgg16_bn,
+    "vgg16":models.imagenet.vgg16,
     "mnasnet1_0": models.imagenet.mnasnet1_0,
     "alexnet": models.imagenet.alexnet,
     "regnet_x_1_6gf": models.imagenet.regnet_x_1_6gf,
