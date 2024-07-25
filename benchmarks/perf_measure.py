@@ -85,7 +85,7 @@ def runner_imagenet(model_type, prune_ratios):
     
     pruning_ratio_dict1, pruning_ratio_dict2 = split_dict(pruning_ratio_dict)
     imp = tp.importance.MagnitudeImportance(p=2)
-    pruner1 = tp.pruner.MetaPruner(
+    pruner = tp.pruner.MetaPruner(
         model,
         example_inputs,
         importance=imp,
@@ -95,22 +95,9 @@ def runner_imagenet(model_type, prune_ratios):
     )
     model = model.to('cpu')
     print("="*16)
-    print("After pruning 1:")
-    pruner1.step()
-    print(model)
-    
-    pruner2 = tp.pruner.MetaPruner(
-        model,
-        example_inputs,
-        importance=imp,
-        pruning_ratio=1.0,
-        pruning_ratio_dict=pruning_ratio_dict2,
-        ignored_layers=ignored_layers,
-    )
-    model = model.to('cpu')
-    print("="*16)
-    print("After pruning 2:")
-    pruner2.step()
+    for g in pruner.step(interactive=True):
+        print(g)
+        g.prune()
     print(model)
     
     pruned_ops, pruned_size = tp.utils.count_ops_and_params(model, example_inputs=example_inputs)
