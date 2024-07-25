@@ -592,4 +592,4 @@ class MetaPruner:
                             print('after checking pruning group')
                             return_groups.append(group)
                             # yield group # yield the group for interactive pruning
-        return return_groups = []
+        return return_groups
