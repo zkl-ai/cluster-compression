@@ -100,7 +100,7 @@ def runner_imagenet(model_type, prune_ratios):
 
 def main(args):
     output_path = f'{args.output_dir}/{hostname}-{args.data_path}' 
-    log_path = f'{args.output_dir}/{hostname}-{args.data_path}'
+    log_path = f'{args.output_dir}/{hostname}-logs.txt'
     input_path = f'{args.root_dir}/{args.data_path}'
     records = load_records(input_path)
     for i, r in enumerate(records):
