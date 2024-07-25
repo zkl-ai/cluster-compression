@@ -476,7 +476,8 @@ class DependencyGraph(object):
         
         # Keep the root indices for index mapping. This will be useful for torch.cat/split/chunck/...
         idxs = [ _helpers._HybridIndex(idx=i, root_idx=i) for i in idxs ] # idxs == root_idxs for the root layer
-
+        
+        print('before Update index mapping before creating the group')
         # Update index mapping before creating the group
         self.update_index_mapping()
         
@@ -515,8 +516,10 @@ class DependencyGraph(object):
                                 (new_dep, new_indices)
                             )
 
+        print('before _fix_dependency_graph_non_recursive')
         _fix_dependency_graph_non_recursive(*group[0])
         
+        print('before merge prunig ops')
         # merge pruning ops
         merged_group = Group() # craft a new group for merging
         for dep, idxs in group.items:
@@ -531,6 +534,7 @@ class DependencyGraph(object):
             merged_group.add_and_merge(dep, idxs)
         merged_group._DG = self
 
+        print('before create a .root_idxs attribute for each group item to store the root indices')
         # create a .root_idxs attribute for each group item to store the root indices
         for i in range(len(merged_group)):
             hybrid_idxs = merged_group[i].idxs
@@ -538,6 +542,7 @@ class DependencyGraph(object):
             root_idxs = _helpers.to_root_idxs(hybrid_idxs)
             merged_group[i] = _helpers.GroupItem(merged_group[i].dep, idxs) # transform _helpers._HybridIndex to plain index
             merged_group[i].root_idxs = root_idxs
+        print('before return')
         return merged_group
 
     def get_all_groups(self, ignored_layers=[], root_module_types=(ops.TORCH_CONV, ops.TORCH_LINEAR)):
