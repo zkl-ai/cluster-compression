@@ -22,12 +22,15 @@ from torchvision.transforms.functional import InterpolationMode
 
 import torch_pruning as tp 
 from functools import partial
-from multiprocessing import Queue, get_context, Manager
+# from multiprocessing import Queue, get_context, Manager
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import socket
 import json
 import requests
 import gc
+import threading
+import psutil
+from queue import Queue
 def get_args_parser(add_help=True):
     import argparse
 
