@@ -16,7 +16,7 @@ if [ -z "${exist}" ];then
 		--network=host -w /workspace ${image}:${tag} \
 		"echo 'Cloning cluster-compression...'; \
 				echo 'installing dependencies...'; \
-				pip install tqdm einops termcolor --index-url https://mirrors.sustech.edu.cn/pypi/web/simple; bash \ "
+				pip install tqdm einops termcolor --index-url https://mirrors.sustech.edu.cn/pypi/web/simple; bash"
 				# echo 'Running tp_worker_imagenet.py...'; \
 				# python perf_measure.py --model vgg16 --data-path vgg16-5000-10.pkl --batch-size 16 --pretrained"
 else
