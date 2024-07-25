@@ -518,7 +518,7 @@ class MetaPruner:
                     self._scope_initial_channels[scope_name] *
                     (1 - target_pruning_ratio)
                 )
-                
+                print("before n_pruned")
                 if n_pruned>0:
                     topk_imp, topk_indices = torch.topk(concat_imp, k=n_pruned, largest=False)
                     thres = topk_imp[-1]
@@ -526,11 +526,13 @@ class MetaPruner:
                     ##############################################
                     # 3. Pruning in each scope
                     ##############################################
+                    print("Pruning in each scope")
                     for group, ch_groups, group_size, target_pruning_ratio, imp in records:
                         module = group[0].dep.target.module
                         pruning_fn = group[0].dep.handler
                         get_channel_fn = self.DG.get_out_channels if self.DG.is_out_channel_pruning_fn(pruning_fn) else self.DG.get_in_channels
-                        
+                    
+                        print("before Prune feature dims/channels")
                         # Prune feature dims/channels
                         pruning_indices = []
                         if len(records)>0 and n_pruned>0:
@@ -579,6 +581,7 @@ class MetaPruner:
                         
                         if isinstance(self.importance, OBDCImportance):
                             self.importance.adjust_fisher(group, pruning_indices)
+                        print('before create pruning group')
                         # create pruning group
                         group = self.DG.get_pruning_group(
                             module, pruning_fn, pruning_indices)
