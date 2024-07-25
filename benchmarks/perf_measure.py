@@ -107,10 +107,10 @@ def main(args):
         prune_ratios = r.ratio
         latency = runner_imagenet(args.model, prune_ratios)
         r.latency[ip_address] = latency
-        with open(output_path, "wb") as f:
-            pickle.dump(records, f)
-        with open(log_path, 'a') as f:
-            f.write(f"[0:{i+1}) records are successfully tested!\n")
+        with open(output_path, "wb") as output_f:
+            pickle.dump(records, output_f)
+        with open(log_path, 'a') as log_f:
+            log_f.write(f"[0:{i+1}) records are successfully tested!\n")
 
 
 
