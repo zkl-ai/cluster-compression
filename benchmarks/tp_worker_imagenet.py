@@ -27,6 +27,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import socket
 import json
 import requests
+import gc
 def get_args_parser(add_help=True):
     import argparse
 
@@ -170,9 +171,9 @@ def runner(args, req, lock):
     # Test forward in eval mode
     print("====== Forward (Inferece with torch.no_grad) ======")
     model = model.eval().to(device)
-    example_inputs = torch.randn(args.batch_size, 3, 224, 224).to(device)
+    batch_example_inputs = torch.randn(args.batch_size, 3, 224, 224).to(device)
     with torch.no_grad():
-        laterncy_mu, latency_std= tp.utils.benchmark.measure_latency(model, example_inputs, repeat=10)
+        laterncy_mu, latency_std= tp.utils.benchmark.measure_latency(model, batch_example_inputs, repeat=10)
         print('laterncy: {:.4f} +/- {:.4f} ms'.format(laterncy_mu, latency_std))
 
     data = {
@@ -190,9 +191,8 @@ def runner(args, req, lock):
     print(data)
 
     # Release GPU memory
-    del model
-    # torch.cuda.empty_cache()
-    # gc.collect()
+    del model, example_inputs, batch_example_inputs
+
 
 
     req = requests.post(callback_address, data=json.dumps(data))
@@ -204,6 +204,9 @@ def runner(args, req, lock):
         print("wrong request with response".format(status_code))
 
     lock.release()
+    torch.cuda.empty_cache()
+    gc.collect()
+    return
 
 
 def consumer(name, args, individual_queue):
