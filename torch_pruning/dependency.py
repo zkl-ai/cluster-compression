@@ -492,12 +492,17 @@ class DependencyGraph(object):
         visited_node = set()
         def _fix_dependency_graph_non_recursive(dep, idxs, *args):
             processing_stack = [(dep, idxs)]
+            print('before while')
+            i = 0 
             while len(processing_stack) > 0:
+                print('in while: ', i)
+                i+=1
                 dep, idxs = processing_stack.pop(-1)
                 node, fn = dep.target, dep.handler
                 visited_node.add(node)
-    
+                j = 0
                 for new_dep in node.dependencies:
+                    print(j,':',new_dep)
                     if new_dep.is_triggered_by(fn):
                         new_indices = idxs
                         for mapping in new_dep.index_mapping:
