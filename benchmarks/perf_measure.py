@@ -14,21 +14,6 @@ import torchvision
 import torch_pruning as tp 
 ip_address, hostname = get_host_ip()
 
-def split_dict(pruning_ratio_dict):
-    total_items = len(pruning_ratio_dict)
-    half_items = total_items // 2
-
-    dict1 = {}
-    dict2 = {}
-
-    for i, (key, value) in enumerate(pruning_ratio_dict.items()):
-        if i < half_items:
-            dict1[key] = value
-        else:
-            dict2[key] = value
-    
-    return dict1, dict2
-
 
 def get_args_parser(add_help=True):
     import argparse
@@ -83,14 +68,13 @@ def runner_imagenet(model_type, prune_ratios):
                     pruning_ratio_idx += 1
 
     
-    pruning_ratio_dict1, pruning_ratio_dict2 = split_dict(pruning_ratio_dict)
     imp = tp.importance.MagnitudeImportance(p=2)
     pruner = tp.pruner.MetaPruner(
         model,
         example_inputs,
         importance=imp,
         pruning_ratio=1.0,
-        pruning_ratio_dict=pruning_ratio_dict1,
+        pruning_ratio_dict=pruning_ratio_dict,
         ignored_layers=ignored_layers,
     )
     model = model.to('cpu')
