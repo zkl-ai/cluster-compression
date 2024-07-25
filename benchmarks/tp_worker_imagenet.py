@@ -109,11 +109,11 @@ def get_args_parser(add_help=True):
     return parser
 
 
-def runner(args, req, lock):
+def runner(args, req):
     device = 'cuda'
     model_type, idx, prune_ratios, callback_address = req
     print("Creating model")
-    model = registry.get_model(num_classes=1000, name=model_type, pretrained=args.pretrained, target_dataset='imagenet') #torchvision.models.__dict__[args.model](pretrained=args.pretrained) #torchvision.models.get_model(args.model, weights=args.weights, num_classes=num_classes)
+    model = registry.get_model(num_classes=1000, name=model_type, pretrained=args.pretrained, target_dataset='imagenet')
     model.eval()
     print("="*16)
     print(model)
@@ -124,7 +124,6 @@ def runner(args, req, lock):
     print("="*16)
     
     print("Pruning model...")
-
     ignored_layers = []
     pruning_ratio_dict = {}
     pruning_ratio_idx = 0
@@ -147,17 +146,16 @@ def runner(args, req, lock):
                 else:
                     pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
                     pruning_ratio_idx += 1
-    
+
     imp = tp.importance.MagnitudeImportance(p=2)
-    # print(pruning_ratio_dict)
     pruner = tp.pruner.MetaPruner(
-            model,
-            example_inputs,
-            importance=imp,
-            pruning_ratio=1.0,
-            pruning_ratio_dict = pruning_ratio_dict,
-            ignored_layers=ignored_layers,
-        )
+        model,
+        example_inputs,
+        importance=imp,
+        pruning_ratio=1.0,
+        pruning_ratio_dict=pruning_ratio_dict,
+        ignored_layers=ignored_layers,
+    )
     model = model.to('cpu')
     print("="*16)
     print("After pruning:")
@@ -168,56 +166,44 @@ def runner(args, req, lock):
     print("Ops: {:.2f} G => {:.2f} G ({:.2f}%, {:.2f}X )".format(base_ops / 1e9, pruned_ops / 1e9, pruned_ops / base_ops * 100, base_ops / pruned_ops))
     print("="*16)
 
-    # Test forward in eval mode
-    print("====== Forward (Inferece with torch.no_grad) ======")
+    print("====== Forward (Inference with torch.no_grad) ======")
     model = model.eval().to(device)
     batch_example_inputs = torch.randn(args.batch_size, 3, 224, 224).to(device)
     with torch.no_grad():
-        laterncy_mu, latency_std= tp.utils.benchmark.measure_latency(model, batch_example_inputs, repeat=10)
-        print('laterncy: {:.4f} +/- {:.4f} ms'.format(laterncy_mu, latency_std))
+        latency_mu, latency_std = tp.utils.benchmark.measure_latency(model, batch_example_inputs, repeat=10)
+        print('latency: {:.4f} +/- {:.4f} ms'.format(latency_mu, latency_std))
 
     data = {
         'idx': idx,
         'loss': 100.0,
-        'mem': 0.0,
-        'lat': laterncy_mu,
+        'mem': psutil.virtual_memory().percent,
+        'lat': latency_mu,
         'weights': 0.0,
         'macs': 0.0,
         'mmin': 0.0,
         'mavg': 0.0,
-        'device':hostname+":"+ip_address,
+        'device': f'{hostname}:{ip_address}',
     }
 
     print(data)
 
-    # Release GPU memory
     del model, example_inputs, batch_example_inputs
-
-
+    torch.cuda.empty_cache()
+    gc.collect()
 
     req = requests.post(callback_address, data=json.dumps(data))
     print(req)
-    status_code = req.status_code
-    if status_code == 200:
-        print("sucessful")
+    if req.status_code == 200:
+        print("successful")
     else:
-        print("wrong request with response".format(status_code))
+        print(f"wrong request with response {req.status_code}")
 
-    lock.release()
-    torch.cuda.empty_cache()
-    gc.collect()
-    return
 
 
 def consumer(name, args, individual_queue):
-    with Manager() as m:
-        lock = m.Lock()
-        while True:
-            lock.acquire()
-            req = individual_queue.get()
-            ctx = get_context('spawn')
-            # t = ctx.Process(target=runner, args=(req, test_data_mem_lat_iter, network_utils, lock))
-            runner(args,req,lock)
+    while True:
+        req = individual_queue.get()
+        runner(args, req)
 
 
 def producer(name, individual_queue, server=('localhost', 8080)):
@@ -274,13 +260,15 @@ def worker(args):
     print('worker starting ....')
     individual_queue = Queue()
 
-    ctx = get_context('fork')
+    # Create server and consumer threads
+    server_thread = threading.Thread(target=producer, args=('producer', individual_queue, (ip_address, args.listen_port)))
+    consumer_thread = threading.Thread(target=consumer, args=('consumer', args, individual_queue))
 
-    server = (ip_address, args.listen_port)
-    p1 = ctx.Process(target=producer, args=('producer', individual_queue, server))
-    c1 = ctx.Process(target=consumer, args=('consumer', args, individual_queue))
-    p1.start()
-    c1.start()
+    server_thread.start()
+    consumer_thread.start()
+
+    server_thread.join()
+    consumer_thread.join()
     return
     
 if __name__ == "__main__":
