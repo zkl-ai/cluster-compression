@@ -499,7 +499,9 @@ class MetaPruner:
         #            print(ranking_scope[name][i][0], ranking_scope[name][i][-2])
         # Handle other scopes for width pruning.
         print("h"*30)
+        print(width_pruning_scope_names)
         for scope_id, scope_name in enumerate(width_pruning_scope_names):
+            print(scope_id, scope_name)
 
             if not self.global_pruning:
                 assert len(ranking_scope[scope_name])<=1, "Internal Error: local pruning should only contain less than one layer per scope."
