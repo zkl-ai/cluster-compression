@@ -153,8 +153,8 @@ def runner(args, req, lock):
             model,
             example_inputs,
             importance=imp,
-            # pruning_ratio=1.0,
-            pruning_ratio_dict = pruning_ratio_dict,
+            ch_sparsity=1.0,
+            ch_sparsity_dict=pruning_ratio_dict,
             ignored_layers=ignored_layers,
         )
     model = model.to('cpu')
