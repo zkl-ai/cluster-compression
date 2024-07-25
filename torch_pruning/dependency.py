@@ -423,6 +423,7 @@ class DependencyGraph(object):
                     dep.target.module)
                 if prunable_chs is None: continue
                 if prunable_chs <= len(idxs):
+                    print('is_out_channel_pruning_fn')
                     return False
 
             if self.is_in_channel_pruning_fn(dep.handler):
@@ -430,7 +431,9 @@ class DependencyGraph(object):
                     dep.target.module)
                 if prunable_in_chs is None: continue
                 if prunable_in_chs <= len(idxs):
+                    print('is_in_channel_pruning_fn')
                     return False
+        
         return True
 
     def is_out_channel_pruning_fn(self, fn: typing.Callable) -> bool:

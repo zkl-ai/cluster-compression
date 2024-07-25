@@ -586,6 +586,8 @@ class MetaPruner:
                         group = self.DG.get_pruning_group(
                             module, pruning_fn, pruning_indices)
                         print('before checking pruning group')
+                        tmp = self.DG.check_pruning_group(group)
+                        print(tmp)
                         if self.DG.check_pruning_group(group):
                             print('after checking pruning group')
                             yield group # yield the group for interactive pruning
