@@ -417,7 +417,10 @@ class DependencyGraph(object):
         Args:
             group (Group): a depenedency group
         """
+        print('in check_pruning_group')
         for dep, idxs in group:
+            print('in check_pruning_group for', dep, idxs )
+            
             if self.is_out_channel_pruning_fn(dep.handler):
                 prunable_chs = self.get_out_channels(
                     dep.target.module)
