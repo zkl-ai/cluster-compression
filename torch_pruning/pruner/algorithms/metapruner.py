@@ -379,8 +379,8 @@ class MetaPruner:
         n_pruned = current_channels - rounded_channels
         return max(n_pruned, 0)
 
-    def _prune(self) -> typing.Generator:
-
+    def _prune(self) :#-> typing.Generator:
+        return_groups = []
         if self.current_step > self.iterative_steps:
             warnings.warn("Pruning exceed the maximum iterative steps, no pruning will be performed.")
             return
@@ -586,9 +586,10 @@ class MetaPruner:
                         group = self.DG.get_pruning_group(
                             module, pruning_fn, pruning_indices)
                         print('before checking pruning group')
-                        # tmp = self.DG.check_pruning_group(group)
-                        # print(tmp)
-                        # if self.DG.check_pruning_group(group):
-                            # print('after checking pruning group')
+                        tmp = self.DG.check_pruning_group(group)
+                        print(tmp)
+                        if self.DG.check_pruning_group(group):
+                            print('after checking pruning group')
+                            return_groups.append(group)
                             # yield group # yield the group for interactive pruning
-                        yield group
+        return return_groups = []
