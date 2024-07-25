@@ -15,10 +15,8 @@ if [ -z "${exist}" ];then
 		-v /data:/data:rw \
 		--network=host -w /workspace ${image}:${tag} \
 		"echo 'Cloning cluster-compression...'; \
-				git clone https://e.coding.net/sustech-dnn-compression/hardware-aware-dnn-compression/cluster-compression.git /workspace/cluster-compression && \
-				cd /workspace/cluster-compression/benchmarks && \
 				echo 'installing dependencies...'; \
-				pip install tqdm einops termcolor --index-url https://mirrors.sustech.edu.cn/pypi/web/simple && \ "
+				pip install tqdm einops termcolor --index-url https://mirrors.sustech.edu.cn/pypi/web/simple; bash \ "
 				# echo 'Running tp_worker_imagenet.py...'; \
 				# python perf_measure.py --model vgg16 --data-path vgg16-5000-10.pkl --batch-size 16 --pretrained"
 else
