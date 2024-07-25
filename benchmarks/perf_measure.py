@@ -90,7 +90,7 @@ def runner_imagenet(model_type, prune_ratios):
         example_inputs,
         importance=imp,
         pruning_ratio=1.0,
-        pruning_ratio_dict=pruning_ratio_dict,
+        pruning_ratio_dict=pruning_ratio_dict1,
         ignored_layers=ignored_layers,
     )
     model = model.to('cpu')
@@ -104,7 +104,7 @@ def runner_imagenet(model_type, prune_ratios):
         example_inputs,
         importance=imp,
         pruning_ratio=1.0,
-        pruning_ratio_dict=pruning_ratio_dict,
+        pruning_ratio_dict=pruning_ratio_dict2,
         ignored_layers=ignored_layers,
     )
     model = model.to('cpu')
