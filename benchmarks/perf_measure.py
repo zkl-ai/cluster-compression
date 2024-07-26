@@ -31,6 +31,7 @@ def get_args_parser(add_help=True):
 
 
 def runner_imagenet(model_type, prune_ratios):
+    prune_ratios = [round(num, 5) for num in prune_ratios]
     device = 'cuda'
     print("Creating model")
     model = registry.get_model(num_classes=1000, name=model_type, pretrained=args.pretrained, target_dataset='imagenet')
