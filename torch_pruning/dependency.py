@@ -502,7 +502,7 @@ class DependencyGraph(object):
                 dep, idxs = processing_stack.pop(-1)
                 node, fn = dep.target, dep.handler
                 visited_node.add(node)
-                print('cur: dep: ', dep, 'idxs: ', idxs)
+                print('cur: dep: ', dep)
                 j = 0
                 for new_dep in node.dependencies:
                     print(j,':',new_dep)
