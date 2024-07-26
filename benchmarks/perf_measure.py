@@ -29,7 +29,6 @@ def get_args_parser(add_help=True):
     
     return parser
 
-
 def runner_imagenet(model_type, prune_ratios):
     device = 'cuda'
     print("Creating model")
@@ -72,36 +71,21 @@ def runner_imagenet(model_type, prune_ratios):
                     pruning_ratio_idx += 1
 
     
-    # imp = tp.importance.MagnitudeImportance(p=2)
-    # pruner = tp.pruner.MetaPruner(
-    #     model,
-    #     example_inputs,
-    #     importance=imp,
-    #     pruning_ratio=1.0,
-    #     pruning_ratio_dict=pruning_ratio_dict,
-    #     ignored_layers=ignored_layers,
-    # )
-    model = model.to('cpu')
-    print("="*16)
-    for i in range(len(pruning_layer)):
-        imp = tp.importance.MagnitudeImportance(p=2)
-        pruner = tp.pruner.MetaPruner(
-            model,
-            example_inputs,
-            importance=imp,
-            pruning_ratio=1.0,
-            pruning_ratio_dict={pruning_layer[i]:prune_ratios[i]},
-            ignored_layers=ignored_layers,
-        )
-        for g in pruner.step(interactive=True):
-            print(g)
-            g.prune()
+    imp = tp.importance.MagnitudeImportance(p=2)
+    pruner = tp.pruner.MetaPruner(
+        model,
+        example_inputs,
+        importance=imp,
+        pruning_ratio=1.0,
+        pruning_ratio_dict=pruning_ratio_dict,
+        ignored_layers=ignored_layers,
+    )
         
          
-    # for g in pruner.step(interactive=True):
-    #     print(g)
-    #     g.prune()
-    # print(model)
+    for g in pruner.step(interactive=True):
+        print(g)
+        g.prune()
+    print(model)
     
     pruned_ops, pruned_size = tp.utils.count_ops_and_params(model, example_inputs=example_inputs)
     print("Params: {:.2f} M => {:.2f} M ({:.2f}%)".format(base_params / 1e6, pruned_size / 1e6, pruned_size / base_params * 100))
