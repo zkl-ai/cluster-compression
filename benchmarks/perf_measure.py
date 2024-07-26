@@ -31,7 +31,6 @@ def get_args_parser(add_help=True):
 
 
 def runner_imagenet(model_type, prune_ratios):
-    prune_ratios = [round(num, 5) for num in prune_ratios]
     device = 'cuda'
     print("Creating model")
     model = registry.get_model(num_classes=1000, name=model_type, pretrained=args.pretrained, target_dataset='imagenet')
@@ -47,10 +46,12 @@ def runner_imagenet(model_type, prune_ratios):
     print("Pruning model...")
     ignored_layers = []
     pruning_ratio_dict = {}
+    pruning_layer = []
     pruning_ratio_idx = 0
     if isinstance(model, torchvision.models.resnet.ResNet):
         for m in model.modules():
             if isinstance(m, torchvision.models.resnet.Bottleneck): 
+                pruning_layer.append(m)
                 pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
                 pruning_ratio_idx += 1
             if isinstance(m, torch.nn.Linear) and m.out_features == 1000:
@@ -59,31 +60,48 @@ def runner_imagenet(model_type, prune_ratios):
     elif isinstance(model, torchvision.models.vgg.VGG):
         for m in model.modules():
             if isinstance(m, torch.nn.Conv2d):
+                pruning_layer.append(m)
                 pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
                 pruning_ratio_idx += 1
             if isinstance(m, torch.nn.Linear):
                 if m.out_features == 1000:
                     ignored_layers.append(m) # DO NOT prune the final classifier!
                 else:
+                    pruning_layer.append(m)
                     pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
                     pruning_ratio_idx += 1
 
     
-    imp = tp.importance.MagnitudeImportance(p=2)
-    pruner = tp.pruner.MetaPruner(
-        model,
-        example_inputs,
-        importance=imp,
-        pruning_ratio=1.0,
-        pruning_ratio_dict=pruning_ratio_dict,
-        ignored_layers=ignored_layers,
-    )
+    # imp = tp.importance.MagnitudeImportance(p=2)
+    # pruner = tp.pruner.MetaPruner(
+    #     model,
+    #     example_inputs,
+    #     importance=imp,
+    #     pruning_ratio=1.0,
+    #     pruning_ratio_dict=pruning_ratio_dict,
+    #     ignored_layers=ignored_layers,
+    # )
     model = model.to('cpu')
     print("="*16)
-    for g in pruner.step(interactive=True):
-        print(g)
-        g.prune()
-    print(model)
+    for i in range(len(pruning_layer)):
+        imp = tp.importance.MagnitudeImportance(p=2)
+        pruner = tp.pruner.MetaPruner(
+            model,
+            example_inputs,
+            importance=imp,
+            pruning_ratio=1.0,
+            pruning_ratio_dict={pruning_layer[i]:prune_ratios[i]},
+            ignored_layers=ignored_layers,
+        )
+        for g in pruner.step(interactive=True):
+            print(g)
+            g.prune()
+        
+         
+    # for g in pruner.step(interactive=True):
+    #     print(g)
+    #     g.prune()
+    # print(model)
     
     pruned_ops, pruned_size = tp.utils.count_ops_and_params(model, example_inputs=example_inputs)
     print("Params: {:.2f} M => {:.2f} M ({:.2f}%)".format(base_params / 1e6, pruned_size / 1e6, pruned_size / base_params * 100))
