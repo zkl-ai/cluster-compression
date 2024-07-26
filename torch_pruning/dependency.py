@@ -496,6 +496,8 @@ class DependencyGraph(object):
             i = 0 
             while len(processing_stack) > 0:
                 print('in while: ', i)
+                print('processing_stack length: ', len(processing_stack) )
+                
                 i+=1
                 dep, idxs = processing_stack.pop(-1)
                 node, fn = dep.target, dep.handler
@@ -503,6 +505,7 @@ class DependencyGraph(object):
                 j = 0
                 for new_dep in node.dependencies:
                     print(j,':',new_dep)
+                    j+=1
                     if new_dep.is_triggered_by(fn):
                         new_indices = idxs
                         for mapping in new_dep.index_mapping:

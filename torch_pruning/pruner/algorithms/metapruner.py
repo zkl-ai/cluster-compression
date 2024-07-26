@@ -588,8 +588,6 @@ class MetaPruner:
                         print('before checking pruning group')
                         # return_groups.append(group)
                         
-                        tmp = self.DG.check_pruning_group(group)
-                        print(tmp)
                         if self.DG.check_pruning_group(group):
                             print('after checking pruning group')
                             return_groups.append(group)
