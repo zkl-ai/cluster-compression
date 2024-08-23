@@ -12,9 +12,12 @@ NORMALIZE_DICT = {
     'cifar100': dict( mean=(0.5071, 0.4867, 0.4408), std=(0.2675, 0.2565, 0.2761) ),
     'cifar10_224':  dict( mean=(0.4914, 0.4822, 0.4465), std=(0.2023, 0.1994, 0.2010) ),
     'cifar100_224': dict( mean=(0.5071, 0.4867, 0.4408), std=(0.2675, 0.2565, 0.2761) ),
+    'mnist': dict(mean=(0.1307), std=(0.3081))
 }
 
-
+MNIST_MODEL_DICT = {
+    'lenet5':models.mnist.lenet5.LeNet5,
+}
 MODEL_DICT = {
     'resnet18': models.cifar.resnet.resnet18,
     'resnet34': models.cifar.resnet.resnet34,
@@ -100,12 +103,13 @@ GRAPH_MODEL_DICT = {
 
 def get_model(name: str, num_classes, pretrained=False, target_dataset='cifar', **kwargs):
     if target_dataset == "imagenet":
-        
         model = IMAGENET_MODEL_DICT[name](pretrained=pretrained)
     elif 'cifar' in target_dataset:
         model = MODEL_DICT[name](num_classes=num_classes)
     elif target_dataset == 'modelnet40':
         model = GRAPH_MODEL_DICT[name](num_classes=num_classes)
+    elif target_dataset =='mnist':
+        model = MNIST_MODEL_DICT[name]()
     return model 
 
 
@@ -125,7 +129,6 @@ def get_dataset(name: str, data_root: str='data', return_transform=False):
             T.ToTensor(),
             T.Normalize( **NORMALIZE_DICT[name] ),
         ])
-        data_root = os.path.join( data_root, 'torchdata' )
         train_dst = datasets.CIFAR10(data_root, train=True, download=True, transform=train_transform)
         val_dst = datasets.CIFAR10(data_root, train=False, download=False, transform=val_transform)
         input_size = (1, 3, 32, 32)
@@ -141,7 +144,6 @@ def get_dataset(name: str, data_root: str='data', return_transform=False):
             T.ToTensor(),
             T.Normalize( **NORMALIZE_DICT[name] ),
         ])
-        data_root = os.path.join( data_root, 'torchdata' ) 
         train_dst = datasets.CIFAR100(data_root, train=True, download=True, transform=train_transform)
         val_dst = datasets.CIFAR100(data_root, train=False, download=True, transform=val_transform)
         input_size = (1, 3, 32, 32)
@@ -151,6 +153,19 @@ def get_dataset(name: str, data_root: str='data', return_transform=False):
         val_dst = utils.datasets.ModelNet40(data_root=data_root, partition='test', num_points=1024)
         train_transform = val_transform = None
         input_size = (1, 3, 2048)
+    elif name=='mnist':
+        num_classes = 10
+        train_transform = T.Compose([
+            T.ToTensor(),
+            T.Normalize( **NORMALIZE_DICT[name] ),
+        ])
+        val_transform = T.Compose([
+            T.ToTensor(),
+            T.Normalize( **NORMALIZE_DICT[name] ),
+        ])
+        train_dst = datasets.MNIST(data_root, train=True, download=True, transform=train_transform)
+        val_dst = datasets.MNIST(data_root, train=False, download=True, transform=val_transform)
+        input_size = (1, 1, 28, 28)
     else:
         raise NotImplementedError
     if return_transform:

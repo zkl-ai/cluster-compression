@@ -1,1 +1,1 @@
-from . import cifar, imagenet, graph
+from . import cifar, imagenet, graph, mnist

@@ -10,7 +10,6 @@ from typing import List, Optional, Tuple
 import torch
 import torch.distributed as dist
 
-
 class SmoothedValue:
     """Track a series of values and provide access to smoothed values over a
     window or the global series average.
@@ -236,11 +235,28 @@ def get_rank():
 def is_main_process():
     return get_rank() == 0
 
+def load_model_with_retries(log_dir, resume_step, max_retries=10, initial_retry_delay=1):
+    ref_model_path = os.path.join(log_dir, f"step{resume_step}/best.pth")
+    retry_delay = initial_retry_delay
+
+    for attempt in range(max_retries):
+        if os.path.exists(ref_model_path):
+            try:
+                ref_model = torch.load(ref_model_path)['model']
+                return ref_model
+            except EOFError:
+                # 文件可能正在写入，稍后再试
+                time.sleep(retry_delay)
+                retry_delay *= 2  # 每次重试时增加延迟
+        else:
+            time.sleep(retry_delay)
+            retry_delay *= 2
+    
+    raise FileNotFoundError(f"{ref_model_path} not found after {max_retries} retries")
 
 def save_on_master(*args, **kwargs):
     if is_main_process():
         torch.save(*args, **kwargs)
-
 
 def init_distributed_mode(args):
     if "RANK" in os.environ and "WORLD_SIZE" in os.environ:

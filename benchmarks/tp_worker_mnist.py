@@ -103,7 +103,7 @@ def runner(args, req):
     device = 'cuda'
     model_type, idx, prune_ratios, callback_address = req
     print("Creating model")
-    model = registry.get_model(num_classes=1000, name=model_type, pretrained=args.pretrained, target_dataset='imagenet')
+    model = registry.get_model(num_classes=10, name=model_type, pretrained=args.pretrained, target_dataset='mnist')
     model.eval()
 
     
@@ -174,7 +174,7 @@ def runner(args, req):
 
     print("====== Forward (Inference with torch.no_grad) ======")
     model = model.eval().to(device)
-    batch_example_inputs = example_inputs.repeat(batch_size, 1, 1, 1).to(device)
+    batch_example_inputs = example_inputs.repeat(args.batch_size, 1, 1, 1).to(device)
     with torch.no_grad():
         latency_mu, latency_std = tp.utils.benchmark.measure_latency(model, batch_example_inputs, repeat=10)
         print('latency: {:.4f} +/- {:.4f} ms'.format(latency_mu, latency_std))

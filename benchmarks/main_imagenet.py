@@ -8,7 +8,7 @@ from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning) 
-
+from collections import defaultdict
 from engine.utils.imagenet_utils import presets, transforms, utils, sampler
 import torch
 import torch.utils.data
@@ -17,25 +17,64 @@ import torchvision
 from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
-
+import random
 import torch_pruning as tp 
+import numpy as np
 from functools import partial
+from ncs import PruningRateOptimizer
+import json
+
+def set_seed(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed) # CPU
+    torch.cuda.manual_seed(seed) # GPU
+    torch.cuda.manual_seed_all(seed) # All GPU
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    torch.backends.cudnn.deterministic = True 
+    torch.backends.cudnn.benchmark = False 
+
+def get_layer_sizes(model_name):
+    if model_name == 'vgg16':
+        layer_sizes = np.array([64, 64,
+                        128, 128, 
+                        256, 256, 256, 
+                        512, 512, 512, 
+                        512, 512, 512, 
+                        4096, 4096,
+                        ]).astype(dtype=np.int32)
+    elif model_name == 'resnet50':
+        layer_sizes = np.array([
+            64, 64, 64,
+            128, 128, 128, 128,
+            256, 256, 256, 256, 256, 256, 
+            512, 512, 512,
+        ]).astype(dtype=np.int32)
+    else: 
+        layer_sizes = None
+        raise f'Not support such model {model_name}.'
+    return layer_sizes
+
 
 def get_args_parser(add_help=True):
     import argparse
 
     parser = argparse.ArgumentParser(description="PyTorch Classification Training", add_help=add_help)
 
-    parser.add_argument("--data-path", default="~/Datasets/ImageNet/", type=str, help="dataset path")
+    parser.add_argument("--data-path", default="/data/workspace/datasets/imagenet/", type=str, help="dataset path")
     parser.add_argument("--model", default="resnet18", type=str, help="model name")
     parser.add_argument("--pretrained", action="store_true")
+    parser.add_argument("--seed", default=42, type=int, help="random seed")
+    parser.add_argument("--resume-step", default=None, type=int, help="path of checkpoint")
+    
+    
 
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
-    parser.add_argument("-b", "--batch-size", default=32, type=int, help="images per gpu, the total batch size is $NGPU x batch_size")
-    parser.add_argument("--epochs", default=90, type=int, metavar="N", help="number of total epochs to run")
+    parser.add_argument("-b", "--batch-size", default=256, type=int, help="images per gpu, the total batch size is $NGPU x batch_size")
+    parser.add_argument("--epochs", default=60, type=int, metavar="N", help="number of total epochs to run")
     parser.add_argument("-j", "--workers", default=16, type=int, metavar="N", help="number of data loading workers (default: 16)")
     parser.add_argument("--opt", default="sgd", type=str, help="optimizer")
-    parser.add_argument("--lr", default=0.1, type=float, help="initial learning rate")
+    parser.add_argument("--lr", default=0.01, type=float, help="initial learning rate")
     parser.add_argument("--momentum", default=0.9, type=float, metavar="M", help="momentum")
     parser.add_argument("--wd", "--weight-decay", default=1e-4, type=float, metavar="W", help="weight decay (default: 1e-4)", dest="weight_decay")
     parser.add_argument("--norm-weight-decay", default=None, type=float, help="weight decay for Normalization layers (default: None, same value as --wd)")
@@ -48,7 +87,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--lr-warmup-epochs", default=0, type=int, help="the number of epochs to warmup (default: 0)")
     parser.add_argument("--lr-warmup-method", default="constant", type=str, help="the warmup method (default: constant)")
     parser.add_argument("--lr-warmup-decay", default=0.01, type=float, help="the decay for lr")
-    parser.add_argument("--lr-step-size", default=30, type=int, help="decrease lr every step-size epochs")
+    parser.add_argument("--lr-step-size", default=10, type=int, help="decrease lr every step-size epochs")
     parser.add_argument("--lr-gamma", default=0.1, type=float, help="decrease lr by a factor of lr-gamma")
     parser.add_argument("--lr-min", default=0.0, type=float, help="minimum lr of lr schedule (default: 0.0)")
     parser.add_argument("--print-freq", default=100, type=int, help="print frequency")
@@ -86,7 +125,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--prune", action="store_true")
     parser.add_argument("--method", type=str, default='l1')
     parser.add_argument("--global-pruning", default=False, action="store_true")
-    parser.add_argument("--target-flops", type=float, default=2.0, help="GFLOPs of pruned model")
+    parser.add_argument("--target-latency", type=float, default=0.1, help="X '%' latency to remain after pruning")
     parser.add_argument("--soft-keeping-ratio", type=float, default=0.0)
     parser.add_argument("--reg", type=float, default=1e-4)
     parser.add_argument("--delta_reg", type=float, default=1e-4)
@@ -96,6 +135,12 @@ def get_args_parser(add_help=True):
     parser.add_argument("--sl-lr", default=None, type=float, help="learning rate")
     parser.add_argument("--sl-lr-step-size", default=None, type=int, help="milestones for learning rate decay")
     parser.add_argument("--sl-lr-warmup-epochs", default=None, type=int, help="the number of epochs to warmup (default: 0)")
+    
+    
+    parser.add_argument('--population_size', type=int, default=10, help='Size of the population in the evolutionary algorithm')
+    parser.add_argument('--num_generations', type=int, default=100, help='Number of generations for the evolutionary algorithm')
+    parser.add_argument('--acc_threshold', type=float, default=0.9, help='Accuracy threshold for the model')
+    parser.add_argument('--log_dir', type=str, default='./logs/ea-logs', help='Directory for logging')
     return parser
 
 def prune_to_target_flops(pruner, model, target_flops, example_inputs):
@@ -218,7 +263,8 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
     if pruner is not None and isinstance(pruner, tp.pruner.GrowingRegPruner):
         pruner.update_reg()
 
-def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix=""):
+def evaluate(model, criterion, data_loader, device, print_freq=50, log_suffix="", batch_num=None):
+    model.to(device)
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = f"Test: {log_suffix}"
@@ -269,6 +315,33 @@ def _get_cache_path(filepath):
     cache_path = os.path.expanduser(cache_path)
     return cache_path
 
+def load_sub_train(valdir, args):
+    # Data loading code
+    print("Loading data...")
+    resize_size, crop_size = (342, 299) if args.model == 'inception_v3' else (256, 224)
+
+    print("Loading validation data...")
+    cache_path = _get_cache_path(valdir)
+    if args.cache_dataset and os.path.exists(cache_path):
+        # Attention, as the transforms are also cached!
+        print("Loading dataset_test from {}".format(cache_path))
+        dataset_test, _ = torch.load(cache_path)
+    else:
+        dataset_test = torchvision.datasets.ImageFolder(
+            valdir,
+            presets.ClassificationPresetEval(crop_size=crop_size, resize_size=resize_size))
+        if args.cache_dataset:
+            print("Saving dataset_test to {}...".format(cache_path))
+            utils.mkdir(os.path.dirname(cache_path))
+            utils.save_on_master((dataset_test, valdir), cache_path)
+
+    print("Creating data loaders...")
+    if args.distributed:
+        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test)
+    else:
+        test_sampler = torch.utils.data.SequentialSampler(dataset_test)
+
+    return dataset_test, test_sampler
 
 def load_data(traindir, valdir, args):
     # Data loading code
@@ -321,11 +394,13 @@ def load_data(traindir, valdir, args):
     return dataset, dataset_test, train_sampler, test_sampler
 
 def main(args):
+    args.output_dir = args.log_dir
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
     utils.init_distributed_mode(args)
     print(args)
+    
 
     device = torch.device(args.device)
 
@@ -336,9 +411,10 @@ def main(args):
         torch.backends.cudnn.benchmark = True
 
     train_dir = os.path.join(args.data_path, "train")
+    sub_train_dir = os.path.join(args.data_path,"sub_train")
     val_dir = os.path.join(args.data_path, "val")
+    
     dataset, dataset_test, train_sampler, test_sampler = load_data(train_dir, val_dir, args)
-
     collate_fn = None
     num_classes = len(dataset.classes)
     mixup_transforms = []
@@ -363,57 +439,78 @@ def main(args):
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test, batch_size=args.batch_size, sampler=test_sampler, num_workers=args.workers, pin_memory=True
     )
-    print("Creating model")
-    model = registry.get_model(num_classes=1000, name=args.model, pretrained=args.pretrained, target_dataset='imagenet') #torchvision.models.__dict__[args.model](pretrained=args.pretrained) #torchvision.models.get_model(args.model, weights=args.weights, num_classes=num_classes)
-    model.eval()
-    print("="*16)
-    print(model)
-    example_inputs = torch.randn(1, 3, 224, 224)
-    base_ops, base_params = tp.utils.count_ops_and_params(model, example_inputs=example_inputs)
-    print("Params: {:.4f} M".format(base_params / 1e6))
-    print("ops: {:.4f} G".format(base_ops / 1e9))
-    print("="*16)
-    if args.prune:
-        pruner = get_pruner(model, example_inputs=example_inputs, args=args)
-        if args.sparsity_learning:
-            if args.sl_resume:
-                print("Loading sparse model from {}...".format(args.sl_resume))
-                model.load_state_dict( torch.load(args.sl_resume, map_location='cpu')['model'] )
-            else:
-                print("Sparsifying model...")
-                if args.sl_lr is None: args.sl_lr = args.lr
-                if args.sl_lr_step_size is None: args.sl_lr_step_size = args.lr_step_size
-                if args.sl_lr_warmup_epochs is None: args.sl_lr_warmup_epochs = args.lr_warmup_epochs
-                if args.sl_epochs is None: args.sl_epochs = args.epochs
-                train(model, args.sl_epochs, 
-                                        lr=args.sl_lr, lr_step_size=args.sl_lr_step_size, lr_warmup_epochs=args.sl_lr_warmup_epochs, 
-                                        train_sampler=train_sampler, data_loader=data_loader, data_loader_test=data_loader_test, 
-                                        device=device, args=args, pruner=pruner, state_dict_only=True)
-                #model.load_state_dict( torch.load('regularized_{:.4f}_best.pth'.format(args.reg), map_location='cpu')['model'] )
-                #utils.save_on_master(
-                #    model_without_ddp.state_dict(),
-                #    os.path.join(args.output_dir, 'regularized-{:.4f}.pth'.format(args.reg)))
-
-        model = model.to('cpu')
-        print("Pruning model...")
-        prune_to_target_flops(pruner, model, args.target_flops, example_inputs)
-        pruned_ops, pruned_size = tp.utils.count_ops_and_params(model, example_inputs=example_inputs)
-        print("="*16)
-        print("After pruning:")
-        print(model)
-        print("Params: {:.2f} M => {:.2f} M ({:.2f}%)".format(base_params / 1e6, pruned_size / 1e6, pruned_size / base_params * 100))
-        print("Ops: {:.2f} G => {:.2f} G ({:.2f}%, {:.2f}X )".format(base_ops / 1e9, pruned_ops / 1e9, pruned_ops / base_ops * 100, base_ops / pruned_ops))
-        print("="*16)
     
-    dataset, dataset_test, train_sampler, test_sampler = load_data(train_dir, val_dir, args)
-    print("Finetuning..." if args.prune else "Training...")
-    train(model, args.epochs, 
-            lr=args.lr, lr_step_size=args.lr_step_size, lr_warmup_epochs=args.lr_warmup_epochs, 
+    if args.label_smoothing>0:
+        criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
+    else:
+        criterion = nn.CrossEntropyLoss()
+    sample_dataset_test, sample_test_sampler = load_sub_train(sub_train_dir, args)
+    
+
+    sample_data_loader_test = torch.utils.data.DataLoader(
+        sample_dataset_test, batch_size=64, sampler=sample_test_sampler, num_workers=16, pin_memory=True
+    )
+    eval_acc = partial(evaluate, criterion=criterion,data_loader=sample_data_loader_test, device=device)
+
+    train_p = partial(train, epochs=args.epochs, lr=args.lr, lr_step_size=args.lr_step_size, lr_warmup_epochs=args.lr_warmup_epochs, 
             train_sampler=train_sampler, data_loader=data_loader, data_loader_test=data_loader_test, 
             device=device, args=args, pruner=None, state_dict_only=(not args.prune))
+    if args.prune:
+        ref_model = registry.get_model(num_classes=1000, name=args.model, pretrained=True, target_dataset='imagenet')
+        ref_layer_sizes_base = get_layer_sizes(args.model)
+        ref_layer_sizes = get_layer_sizes(args.model)
+        cur_prune_rate = np.zeros(len(ref_layer_sizes_base))
+        if args.resume_step:
+            print(f'resum from {args.log_dir}/{args.resume_step}...')
+            ref_model_path =  os.path.join(args.log_dir, f"step{args.resume_step}/best.pth")
+            ref_model = torch.load(ref_model_path)['model']
+            print(f'ref_model', ref_model)
+            for step in range(args.resume_step):
+                best_idv_path = os.path.join(args.log_dir, f"step{args.resume_step}/best_idv.json")
+                with open(best_idv_path, 'r') as file:
+                    best_prune_rate = json.load(file)[-1][0]
+                ref_layer_sizes = (ref_layer_sizes * (1-np.array(best_prune_rate))).astype(dtype=np.int32)
+            print(ref_layer_sizes)
+            cur_prune_rate = 1 - (ref_layer_sizes / ref_layer_sizes_base)
+            print(cur_prune_rate.tolist())
+                
+        for step in range(10):
+            if args.resume_step:
+                if step < args.resume_step:
+                    continue
+            
+            set_seed(args.seed)
+            
+            step_log_dir = os.path.join(args.log_dir, f"step{step+1}")
+            args.output_dir = step_log_dir
+            prune_rate_optimizer = PruningRateOptimizer(model_name=args.model, 
+                model=ref_model,
+                layer_sizes= ref_layer_sizes,
+                base_layer_sizes = ref_layer_sizes_base,
+                cur_prune_rate = cur_prune_rate,
+                seed=args.seed, eval_acc=eval_acc,
+                population_size=args.population_size,
+                num_generations=args.num_generations,
+                acc_threshold=args.acc_threshold,
+                log_dir=step_log_dir
+            )
+            best_prune_rate = prune_rate_optimizer.optimize()
+            print(best_prune_rate)
+            model = prune_rate_optimizer.prune(best_prune_rate)
+            print(f'---------------------------step {step+1}: fine-tune--------------------------')
+            train_p(model=model)
+            
+            print(f'---------------------------step {step+1}: load ref model--------------------------')
+            ref_model = utils.load_model_with_retries(log_dir=args.log_dir, resume_step=step+1)
+            ref_layer_sizes = (ref_layer_sizes * (1-np.array(best_prune_rate))).astype(dtype=np.int32)
+            cur_prune_rate = 1 - (ref_layer_sizes / ref_layer_sizes_base)
+            print('ref_layer_sizes', ref_layer_sizes)
+            print('cur_prune_rate', cur_prune_rate.tolist())
+            
+        
 
 def train(
-    model, 
+    model,
     epochs, 
     lr, lr_step_size, lr_warmup_epochs, 
     train_sampler, data_loader, data_loader_test, 
@@ -531,8 +628,8 @@ def train(
 
     if args.test_only:
         # We disable the cudnn benchmarking because it can noticeably affect the accuracy
-        torch.backends.cudnn.benchmark = False
-        torch.backends.cudnn.deterministic = True
+        # torch.backends.cudnn.benchmark = False
+        # torch.backends.cudnn.deterministic = True
         if model_ema:
             evaluate(model_ema, criterion, data_loader_test, device=device, log_suffix="EMA")
         else:
@@ -564,15 +661,18 @@ def train(
                 checkpoint["scaler"] = scaler.state_dict()
             if acc>best_acc:
                 best_acc=acc
-                utils.save_on_master(checkpoint, os.path.join(args.output_dir, prefix+"best.pth"))
-            utils.save_on_master(checkpoint, os.path.join(args.output_dir, prefix+"latest.pth"))
+                utils.save_on_master(checkpoint, os.path.join(args.output_dir, prefix+f"best.pth"))
+            utils.save_on_master(checkpoint, os.path.join(args.output_dir, prefix+f"latest.pth"))
         print("Epoch {}/{}, Current Best Acc = {:.6f}".format(epoch, epochs, best_acc))
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print(f"Training time {total_time_str}")
-    return model_without_ddp
+    return os.path.join(args.output_dir, prefix+f"best.pth")
 
 if __name__ == "__main__":
     args = get_args_parser().parse_args()
     main(args)
+    
+    
+    # python main_imagenet.py —prune --model resnet50 --pretrained --test-only --batch-size 256 --cache-dataset
