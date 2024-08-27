@@ -174,7 +174,7 @@ def runner(args, req):
 
     print("====== Forward (Inference with torch.no_grad) ======")
     model = model.eval().to(device)
-    batch_example_inputs = example_inputs.repeat(batch_size, 1, 1, 1).to(device)
+    batch_example_inputs = example_inputs.repeat(args.batch_size, 1, 1, 1).to(device)
     with torch.no_grad():
         latency_mu, latency_std = tp.utils.benchmark.measure_latency(model, batch_example_inputs, repeat=10)
         print('latency: {:.4f} +/- {:.4f} ms'.format(latency_mu, latency_std))
