@@ -39,7 +39,6 @@ def get_args_parser(add_help=True):
     parser.add_argument("--data-path", default="~/Datasets/ImageNet/", type=str, help="dataset path")
     parser.add_argument("--model", default="resnet18", type=str, help="model name")
     parser.add_argument("--pretrained", action="store_true")
-    parser.add_argument("--model-path", default=None, type=str, help="model path")
     
     
 
@@ -107,7 +106,7 @@ def runner(args, req):
     print("Creating model")
     script_dir = os.getcwd()
 
-    root_dir = os.path.abspath(os.path.join(script_dir, args.model_path))
+    root_dir = os.path.abspath(os.path.join(script_dir, 'metapruning/resnet50/2G'))
     # 将根目录添加到 sys.path，这样可以导入根目录中的模块
     sys.path.append(root_dir)
 
