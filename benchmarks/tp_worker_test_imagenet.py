@@ -118,12 +118,13 @@ def runner(args, req):
     # model = registry.get_model(num_classes=10, name=model_type, pretrained=args.pretrained, target_dataset='mnist')
     model.eval()
 
+    example_inputs = torch.randn(1, 3, 224, 224)
     
     print("Pruning model...")
     ignored_layers = []
     pruning_ratio_dict = {}
     pruning_ratio_idx = 0
-    if isinstance(model, torchvision.models.resnet.ResNet):
+    if isinstance(model, resnet50):
         example_inputs = torch.randn(1, 3, 224, 224)
         for m in model.modules():
             if isinstance(m, torchvision.models.resnet.Bottleneck): 
