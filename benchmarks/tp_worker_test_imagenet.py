@@ -106,7 +106,7 @@ def runner(args, req):
     print("Creating model")
     script_dir = os.getcwd()
 
-    root_dir = os.path.abspath(os.path.join(script_dir, 'metapruning/resnet50/2G'))
+    root_dir = os.path.abspath(os.path.join(script_dir, 'metapruning/resnet50/1G'))
     # 将根目录添加到 sys.path，这样可以导入根目录中的模块
     sys.path.append(root_dir)
 
