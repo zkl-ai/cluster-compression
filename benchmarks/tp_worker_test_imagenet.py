@@ -155,7 +155,7 @@ def runner(args, req):
     ignored_layers = []
     pruning_ratio_dict = {}
     pruning_ratio_idx = 0
-    if isinstance(model, torchvision.models.resnet):
+    if isinstance(model, torchvision.models.resnet.ResNet):
         example_inputs = torch.randn(1, 3, 224, 224)
         for m in model.modules():
             if isinstance(m, torchvision.models.resnet.Bottleneck): 
