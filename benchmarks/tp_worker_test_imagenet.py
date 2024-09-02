@@ -104,17 +104,34 @@ def runner(args, req):
     device = 'cuda'
     model_type, idx, prune_ratios, callback_address = req
     print("Creating model")
+    # metapruning
+    # script_dir = os.getcwd()
+
+    # root_dir = os.path.abspath(os.path.join(script_dir, 'metapruning/resnet50/1G'))
+    # # 将根目录添加到 sys.path，这样可以导入根目录中的模块
+    # sys.path.append(root_dir)
+
+    # # 导入模型定义
+    # from resnet import resnet50  # 替换为模型类的实际名称
+
+    # # 初始化模型
+    # model = resnet50()
+    
+    # autoslim
+    # autoslim
     script_dir = os.getcwd()
 
-    root_dir = os.path.abspath(os.path.join(script_dir, 'metapruning/resnet50/1G'))
+    root_dir = os.path.abspath(os.path.join(script_dir, 'slimmable_networks'))
     # 将根目录添加到 sys.path，这样可以导入根目录中的模块
     sys.path.append(root_dir)
 
     # 导入模型定义
-    from resnet import resnet50  # 替换为模型类的实际名称
+    from models.autoslim_resnet import Model
 
-    # 初始化模型
-    model = resnet50()
+    model = Model()
+
+    model
+    
     # model = registry.get_model(num_classes=10, name=model_type, pretrained=args.pretrained, target_dataset='mnist')
     model.eval()
 
