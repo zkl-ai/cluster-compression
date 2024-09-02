@@ -143,7 +143,7 @@ def runner(args, req):
     root_dir = os.path.abspath(os.path.join(script_dir, 'regularization_pruning'))
     # 将根目录添加到 sys.path，这样可以导入根目录中的模块
     sys.path.append(root_dir)
-    file_name = '/root/data/workspace/prunemethod/resenet50/GReg/GReg/resnet50_3.06x_GReg-2_top1=73.90.pth'
+    file_name = '/root/data/workspace/prunemethod/resenet50/GReg/GReg/resnet50_2.31x_GReg-2_top1=75.36.pth'
     model = torch.load(file_name)['model'].module.to('cpu')
     
     # model = registry.get_model(num_classes=10, name=model_type, pretrained=args.pretrained, target_dataset='mnist')
