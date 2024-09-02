@@ -129,8 +129,6 @@ def runner(args, req):
     from models.autoslim_resnet import Model
 
     model = Model()
-
-    model
     
     # model = registry.get_model(num_classes=10, name=model_type, pretrained=args.pretrained, target_dataset='mnist')
     model.eval()
@@ -141,7 +139,7 @@ def runner(args, req):
     ignored_layers = []
     pruning_ratio_dict = {}
     pruning_ratio_idx = 0
-    if isinstance(model, resnet50):
+    if isinstance(model, Model):
         example_inputs = torch.randn(1, 3, 224, 224)
         for m in model.modules():
             if isinstance(m, torchvision.models.resnet.Bottleneck): 
@@ -174,6 +172,7 @@ def runner(args, req):
                 else:
                     pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
                     pruning_ratio_idx += 1
+        
 
     print("="*16)
     print(model)
