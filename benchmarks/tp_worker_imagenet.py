@@ -106,6 +106,8 @@ def runner(args, req):
     model = registry.get_model(num_classes=1000, name=model_type, pretrained=args.pretrained, target_dataset='imagenet')
     model.eval()
 
+    example_inputs = torch.randn(1, 3, 224, 224)
+    
     
     print("Pruning model...")
     ignored_layers = []
