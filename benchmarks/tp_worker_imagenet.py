@@ -134,7 +134,7 @@ def runner(args, req):
                     pruning_ratio_idx += 1
     elif isinstance(model, models.imagenet.MobileNetV1):
         for dep_conv in model.features:
-            pruning_ratio_dict[dep_conv] = prune_rate[pruning_ratio_idx]
+            pruning_ratio_dict[dep_conv] = prune_ratios[pruning_ratio_idx]
             pruning_ratio_idx += 1
         ignored_layers.append(model.classifier) # DO NOT prune the final classifier!
         
