@@ -132,19 +132,12 @@ def runner(args, req):
                 else:
                     pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
                     pruning_ratio_idx += 1
-    elif isinstance(model, registry.MNIST_MODEL_DICT['lenet5']):
-        example_inputs = torch.randn(1, 1, 28, 28)
-        for m in model.modules():
-            if isinstance(m, torch.nn.Conv2d):
-                pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
-                pruning_ratio_idx += 1
-            if isinstance(m, torch.nn.Linear):
-                if m.out_features == 10:
-                    ignored_layers.append(m) # DO NOT prune the final classifier!
-                else:
-                    pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
-                    pruning_ratio_idx += 1
-
+    elif isinstance(model, models.imagenet.MobileNetV1):
+        for dep_conv in model.features:
+            pruning_ratio_dict[dep_conv] = prune_rate[pruning_ratio_idx]
+            pruning_ratio_idx += 1
+        ignored_layers.append(model.classifier) # DO NOT prune the final classifier!
+        
     print("="*16)
     print(model)
     

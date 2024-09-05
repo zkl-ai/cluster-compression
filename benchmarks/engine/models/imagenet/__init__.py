@@ -16,7 +16,10 @@ try:
     from torchvision.models import regnet_x_1_6gf
     from torchvision.models import resnext50_32x4d
     from .vision_transformer import vit_b_16
+    from .mobilenetv1 import mobilenet_v1
+    from .mobilenetv1 import MobileNetV1
 except:
     regnet_x_1_6gf = None
     resnext50_32x4d = None
     vit_b_16 = None
+    mobilenet_v1 = None

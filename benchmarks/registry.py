@@ -94,6 +94,7 @@ IMAGENET_MODEL_DICT={
     "regnet_x_1_6gf": models.imagenet.regnet_x_1_6gf,
     "resnext50_32x4d": models.imagenet.resnext50_32x4d,
     "vit_b_16": models.imagenet.vit_b_16,
+    "mobilenet_v1":models.imagenet.mobilenet_v1,
 }
 
 GRAPH_MODEL_DICT = {
