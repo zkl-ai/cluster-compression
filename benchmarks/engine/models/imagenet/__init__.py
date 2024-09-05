@@ -22,4 +22,3 @@ except:
     regnet_x_1_6gf = None
     resnext50_32x4d = None
     vit_b_16 = None
-    mobilenet_v1 = None
