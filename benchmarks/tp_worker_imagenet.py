@@ -103,7 +103,8 @@ def runner(args, req):
     device = 'cuda'
     model_type, idx, prune_ratios, callback_address = req
     print("Creating model")
-    model = registry.get_model(num_classes=1000, name=model_type, pretrained=args.pretrained, target_dataset='imagenet')
+    # model = registry.get_model(num_classes=1000, name=model_type, pretrained=args.pretrained, target_dataset='imagenet')
+    model = models.imagenet.MobileNetV1(n_class=1000, profile='0.5flops')
     model.eval()
 
     example_inputs = torch.randn(1, 3, 224, 224)
