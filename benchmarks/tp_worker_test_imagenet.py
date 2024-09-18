@@ -105,6 +105,10 @@ def runner(args, req):
     model_type, idx, prune_ratios, callback_address = req
     print("Creating model")
     # metapruning
+    root_dir = '/root/data/workspace/prunemethod/mobilenet_v1/metapruning/'
+    sys.path.append(root_dir)
+    from mobilenet_v1 import MobileNetV1
+    model = MobileNetV1()
     # script_dir = os.getcwd()
 
     # root_dir = os.path.abspath(os.path.join(script_dir, 'metapruning/resnet50/1G'))
@@ -137,14 +141,14 @@ def runner(args, req):
     #     # [48, 192, 16, 16, 192, 56, 56, 192, 24, 40, 192, 512, 88, 112, 512, 64, 104, 512, 104, 112, 512, 80, 128, 512, 1024, 240, 216, 1024, 144, 216, 1024, 192, 192, 1024, 144, 240, 1024, 240, 256, 1024, 256, 256, 1024, 2016, 512, 512, 2016, 480, 512, 2016, 512, 512, 2016, 1000],  # 3005M
     # ]
     # model = Model()
-    # GReg
-    script_dir = os.getcwd()
+    # # GReg
+    # script_dir = os.getcwd()
 
-    root_dir = os.path.abspath(os.path.join(script_dir, 'regularization_pruning'))
-    # 将根目录添加到 sys.path，这样可以导入根目录中的模块
-    sys.path.append(root_dir)
-    file_name = '/root/data/workspace/prunemethod/resenet50/GReg/GReg/resnet50_2.56x_GReg-2_top1=74.93.pth'
-    model = torch.load(file_name)['model'].module.to('cpu')
+    # root_dir = os.path.abspath(os.path.join(script_dir, 'regularization_pruning'))
+    # # 将根目录添加到 sys.path，这样可以导入根目录中的模块
+    # sys.path.append(root_dir)
+    # file_name = '/root/data/workspace/prunemethod/resenet50/GReg/GReg/resnet50_2.56x_GReg-2_top1=74.93.pth'
+    # model = torch.load(file_name)['model'].module.to('cpu')
     
     # model = registry.get_model(num_classes=10, name=model_type, pretrained=args.pretrained, target_dataset='mnist')
     model.eval()
