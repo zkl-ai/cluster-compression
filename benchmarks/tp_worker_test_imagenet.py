@@ -141,7 +141,7 @@ def runner(args, req):
         # [48, 192, 16, 16, 192, 56, 56, 192, 24, 40, 192, 512, 88, 112, 512, 64, 104, 512, 104, 112, 512, 80, 128, 512, 1024, 240, 216, 1024, 144, 216, 1024, 192, 192, 1024, 144, 240, 1024, 240, 256, 1024, 256, 256, 1024, 2016, 512, 512, 2016, 480, 512, 2016, 512, 512, 2016, 1000],  # 3005M
     ]
     model = Model()
-    model = torch.load('/root/data/workspace/prunemethod/resenet50/autoslim/057g',map_location='cpu')
+    model = torch.load('/root/data/workspace/prunemethod/resnet50/autoslim/057g',map_location='cpu')
     
     # # GReg
     # script_dir = os.getcwd()
