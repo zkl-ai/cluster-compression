@@ -161,8 +161,8 @@ def runner(args, req):
     from models import get_model
     
     halp_para = 80
-    model = get_model(arch='resnet50', class_num=1000, enable_bias=False, group_mask_file=f'/root/data/workspace/prunemethod/resenet50/halp/resnet50_halp{halp_para}_group_mask.pkl')
-    resume_ckpt = torch.load(f"/root/data/workspace/prunemethod/resenet50/halp/resnet50_halp{halp_para}_clean.pth", map_location="cpu")
+    model = get_model(arch='resnet50', class_num=1000, enable_bias=False, group_mask_file=f'/root/data/workspace/prunemethod/resnet50/halp/resnet50_halp{halp_para}_group_mask.pkl')
+    resume_ckpt = torch.load(f"/root/data/workspace/prunemethod/resnet50/halp/resnet50_halp{halp_para}_clean.pth", map_location="cpu")
     if "state_dict" in resume_ckpt:
         resume_ckpt_state_dict = resume_ckpt["state_dict"]
     else:
