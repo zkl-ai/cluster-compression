@@ -158,6 +158,8 @@ def runner(args, req):
     root_dir = os.path.abspath(os.path.join(script_dir, 'HALP'))
     # 将根目录添加到 sys.path，这样可以导入根目录中的模块
     sys.path.append(root_dir)
+    from models import get_model
+    
     halp_para = 80
     model = get_model(arch='resnet50', class_num=1000, enable_bias=False, group_mask_file=f'/root/data/workspace/prunemethod/resenet50/halp/resnet50_halp{halp_para}_group_mask.pkl')
     resume_ckpt = torch.load(f"/root/data/workspace/prunemethod/resenet50/halp/resnet50_halp{halp_para}_clean.pth", map_location="cpu")
