@@ -122,26 +122,26 @@ def runner(args, req):
     # model = resnet50()
     
     # autoslim
-    script_dir = os.getcwd()
+    # script_dir = os.getcwd()
 
-    root_dir = os.path.abspath(os.path.join(script_dir, 'slimmable_networks'))
-    # 将根目录添加到 sys.path，这样可以导入根目录中的模块
-    sys.path.append(root_dir)
+    # root_dir = os.path.abspath(os.path.join(script_dir, 'slimmable_networks'))
+    # # 将根目录添加到 sys.path，这样可以导入根目录中的模块
+    # sys.path.append(root_dir)
 
-    from models.autoslim_resnet import Model
-    from utils.model_profiling import model_profiling
-    from models.slimmable_ops import FLAGS
+    # from models.autoslim_resnet import Model
+    # from utils.model_profiling import model_profiling
+    # from models.slimmable_ops import FLAGS
 
 
-    FLAGS.width_mult_list = [1]
-    FLAGS.channel_num_list = [
-        [24, 72, 8, 16, 72, 16, 16, 72, 8, 8, 72, 240, 16, 24, 240, 16, 24, 240, 16, 16, 240, 16, 24, 240, 704, 72, 72, 704, 48, 72, 704, 48, 72, 704, 72, 72, 704, 48, 48, 704, 48, 48, 704, 1680, 280, 240, 1680, 120, 200, 1680, 280, 280, 1680, 1000],  # 570M
-        # [32, 72, 16, 16, 72, 16, 16, 72, 8, 8, 72, 280, 24, 40, 280, 16, 24, 280, 16, 24, 280, 24, 40, 280, 880, 72, 72, 880, 72, 96, 880, 72, 72, 880, 72, 72, 880, 48, 72, 880, 168, 96, 880, 2016, 360, 280, 2016, 320, 360, 2016, 480, 440, 2016, 1000],  # 1000M
-        # [40, 120, 16, 16, 120, 24, 24, 120, 16, 24, 120, 440, 48, 72, 440, 32, 48, 440, 40, 56, 440, 64, 72, 440, 1024, 168, 168, 1024, 96, 144, 1024, 120, 168, 1024, 120, 144, 1024, 120, 144, 1024, 256, 256, 1024, 2016, 512, 512, 2016, 480, 480, 2016, 512, 512, 2016, 1000],  # 2006M
-        # [48, 192, 16, 16, 192, 56, 56, 192, 24, 40, 192, 512, 88, 112, 512, 64, 104, 512, 104, 112, 512, 80, 128, 512, 1024, 240, 216, 1024, 144, 216, 1024, 192, 192, 1024, 144, 240, 1024, 240, 256, 1024, 256, 256, 1024, 2016, 512, 512, 2016, 480, 512, 2016, 512, 512, 2016, 1000],  # 3005M
-    ]
-    model = Model()
-    model = torch.load('/root/data/workspace/prunemethod/resnet50/autoslim/057g',map_location='cpu')
+    # FLAGS.width_mult_list = [1]
+    # FLAGS.channel_num_list = [
+    #     [24, 72, 8, 16, 72, 16, 16, 72, 8, 8, 72, 240, 16, 24, 240, 16, 24, 240, 16, 16, 240, 16, 24, 240, 704, 72, 72, 704, 48, 72, 704, 48, 72, 704, 72, 72, 704, 48, 48, 704, 48, 48, 704, 1680, 280, 240, 1680, 120, 200, 1680, 280, 280, 1680, 1000],  # 570M
+    #     # [32, 72, 16, 16, 72, 16, 16, 72, 8, 8, 72, 280, 24, 40, 280, 16, 24, 280, 16, 24, 280, 24, 40, 280, 880, 72, 72, 880, 72, 96, 880, 72, 72, 880, 72, 72, 880, 48, 72, 880, 168, 96, 880, 2016, 360, 280, 2016, 320, 360, 2016, 480, 440, 2016, 1000],  # 1000M
+    #     # [40, 120, 16, 16, 120, 24, 24, 120, 16, 24, 120, 440, 48, 72, 440, 32, 48, 440, 40, 56, 440, 64, 72, 440, 1024, 168, 168, 1024, 96, 144, 1024, 120, 168, 1024, 120, 144, 1024, 120, 144, 1024, 256, 256, 1024, 2016, 512, 512, 2016, 480, 480, 2016, 512, 512, 2016, 1000],  # 2006M
+    #     # [48, 192, 16, 16, 192, 56, 56, 192, 24, 40, 192, 512, 88, 112, 512, 64, 104, 512, 104, 112, 512, 80, 128, 512, 1024, 240, 216, 1024, 144, 216, 1024, 192, 192, 1024, 144, 240, 1024, 240, 256, 1024, 256, 256, 1024, 2016, 512, 512, 2016, 480, 512, 2016, 512, 512, 2016, 1000],  # 3005M
+    # ]
+    # model = Model()
+    # model = torch.load('/root/data/workspace/prunemethod/resnet50/autoslim/057g',map_location='cpu')
     
     # # GReg
     # script_dir = os.getcwd()
@@ -152,7 +152,28 @@ def runner(args, req):
     # file_name = '/root/data/workspace/prunemethod/resenet50/GReg/GReg/resnet50_2.56x_GReg-2_top1=74.93.pth'
     # model = torch.load(file_name)['model'].module.to('cpu')
     
+    
+    # HALP
+    script_dir = os.getcwd()
+    root_dir = os.path.abspath(os.path.join(script_dir, 'HALP'))
+    # 将根目录添加到 sys.path，这样可以导入根目录中的模块
+    sys.path.append(root_dir)
+    halp_para = 80
+    model = get_model(arch='resnet50', class_num=1000, enable_bias=False, group_mask_file=f'/root/data/workspace/prunemethod/resenet50/halp/resnet50_halp{halp_para}_group_mask.pkl')
+    resume_ckpt = torch.load(f"/root/data/workspace/prunemethod/resenet50/halp/resnet50_halp{halp_para}_clean.pth", map_location="cpu")
+    if "state_dict" in resume_ckpt:
+        resume_ckpt_state_dict = resume_ckpt["state_dict"]
+    else:
+        resume_ckpt_state_dict = resume_ckpt
+    model.load_state_dict(
+                {k.replace("module.", ""): v for k, v in resume_ckpt_state_dict.items()}
+            )
+   
+   
+   
     # model = registry.get_model(num_classes=10, name=model_type, pretrained=args.pretrained, target_dataset='mnist')
+   
+   
     model.eval()
 
     example_inputs = torch.randn(1, 3, 224, 224)
