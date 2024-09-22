@@ -160,7 +160,7 @@ def runner(args, req):
     sys.path.append(root_dir)
     from models import get_model
     
-    halp_para = 80
+    halp_para = 55
     model = get_model(arch='resnet50', class_num=1000, enable_bias=False, group_mask_file=f'/root/data/workspace/prunemethod/resnet50/halp/resnet50_halp{halp_para}_group_mask.pkl')
     resume_ckpt = torch.load(f"/root/data/workspace/prunemethod/resnet50/halp/resnet50_halp{halp_para}_clean.pth", map_location="cpu")
     if "state_dict" in resume_ckpt:
