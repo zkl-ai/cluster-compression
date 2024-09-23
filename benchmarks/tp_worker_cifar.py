@@ -118,7 +118,7 @@ def runner(args, req):
     pruning_ratio_idx = 0
     if isinstance(model, resnet_tiny.ResNet):
         for m in model.modules():
-            if isinstance(m, resnet_tiny.BasicBlock)
+            if isinstance(m, resnet_tiny.BasicBlock):
                 pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
                 pruning_ratio_idx += 1
             if isinstance(m, torch.nn.Linear) and m.out_features == 10:
