@@ -116,12 +116,12 @@ def runner(args, req):
     ignored_layers = []
     pruning_ratio_dict = {}
     pruning_ratio_idx = 0
-    if isinstance(model, resnet_tiny.BasicBlock):
+    if isinstance(model, resnet_tiny.ResNet):
         for m in model.modules():
-            if isinstance(m, torchvision.models.resnet.Bottleneck): 
+            if isinstance(m, resnet_tiny.BasicBlock)
                 pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
                 pruning_ratio_idx += 1
-            if isinstance(m, torch.nn.Linear) and m.out_features == 1000:
+            if isinstance(m, torch.nn.Linear) and m.out_features == 10:
                 ignored_layers.append(m) # DO NOT prune the final classifier!
         
     print("="*16)
