@@ -32,7 +32,7 @@ import threading
 import psutil
 from queue import Queue
 import engine.models.cifar.resnet_tiny as resnet_tiny
-
+import engine.models.cifar.vgg.VGG as vgg
 def get_args_parser(add_help=True):
     import argparse
 
@@ -123,7 +123,13 @@ def runner(args, req):
                 pruning_ratio_idx += 1
             if isinstance(m, torch.nn.Linear) and m.out_features == 10:
                 ignored_layers.append(m) # DO NOT prune the final classifier!
-        
+    elif isinstance(model, vgg):
+        for m in model.modules():
+            if isinstance(m, torch.nn.Conv2d):
+                pruning_ratio_dict[m] = prune_ratios[pruning_ratio_idx]
+                pruning_ratio_idx += 1
+            if isinstance(m, torch.nn.Linear) and m.out_features == 10:
+                ignored_layers.append(m) # DO NOT prune the final classifier!
     print("="*16)
     print(model)
     
