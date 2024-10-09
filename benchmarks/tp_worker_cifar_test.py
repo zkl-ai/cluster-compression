@@ -105,9 +105,8 @@ def runner(args, req):
     device = 'cuda'
     model_type, idx, prune_ratios, callback_address = req
     print("Creating model")
-    # model = registry.get_model(num_classes=1000, name=model_type, pretrained=args.pretrained, target_dataset='imagenet')
-    # model =  registry.get_model(num_classes=10, name=model_type, pretrained=False, target_dataset='cifar10')
-    model = torch.load('/root/data/workspace/prunemethod/resnet56/ours-v0/cifar10_resnet56_surrogate_step5.pth', map_location='cpu')
+    model =  registry.get_model(num_classes=10, name=model_type, pretrained=False, target_dataset='cifar10')
+    # model = torch.load('/root/data/workspace/prunemethod/resnet56/ours-v0/cifar10_resnet56_surrogate_step5.pth', map_location='cpu')
     model.eval()
 
     example_inputs = torch.randn(1, 3, 32, 32)
